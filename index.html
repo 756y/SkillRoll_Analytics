@@ -1,207 +1,193 @@
 <!doctype html>
-<html lang="zh-Hant">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>技能骰統計分析器</title>
-    <style>
-        :root{color-scheme:dark;--bg:#10131b;--panel:#191f2b;--panel2:#202838;--line:#303b4f;--text:#edf2fb;--muted:#9ba8bd;--accent:#8b9cff;--good:#61d6a4;--bad:#ff7e8b;--header1:#242e49;--header2:#171c2a;--hover:#252e40;--barbg:#30394b;--pillbg:#303b50;--primary:#4858a4;--primaryline:#6578d5}
-        body[data-theme="light"]{color-scheme:light;--bg:#f3f6fb;--panel:#ffffff;--panel2:#edf2f9;--line:#d4dce8;--text:#202b3c;--muted:#64748b;--accent:#5268d8;--good:#16845b;--bad:#c9354c;--header1:#e3eaff;--header2:#f5f7ff;--hover:#e6edfa;--barbg:#dce4f0;--pillbg:#e1e8f3;--primary:#dce4ff;--primaryline:#9aa9ec}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Noto Sans TC",sans-serif}header{padding:24px max(16px,calc((100% - 1280px)/2));background:linear-gradient(120deg,var(--header1),var(--header2));border-bottom:1px solid var(--line)}h1{margin:0;font-size:clamp(22px,4vw,32px)}header p{margin:6px 0 0;color:var(--muted)}main{max-width:1280px;margin:auto;padding:18px;display:grid;gap:16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.upload{border:1px dashed #65749a;padding:14px;border-radius:12px;flex:1;min-width:240px}input,select,button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px}input[type=file]{max-width:100%}button{cursor:pointer}button:hover{border-color:var(--accent)}button.primary{background:var(--primary);border-color:var(--primaryline)}button:disabled{opacity:.45;cursor:not-allowed}.muted{color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{background:var(--panel2);padding:12px;border-radius:12px}.stat strong{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.filters label{display:flex;align-items:center;gap:5px;background:var(--panel2);padding:6px 9px;border-radius:9px}.filters input{accent-color:var(--accent)}.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;min-width:760px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-weight:600}tr.clickrow{cursor:pointer}tr.clickrow:hover{background:var(--hover)}.pill{display:inline-block;padding:2px 8px;border-radius:20px;background:var(--pillbg);font-size:12px}.cat-大成功,.cat-極限成功{color:var(--good)}.cat-大失敗,.cat-失敗{color:var(--bad)}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.person-list{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.personbtn.active{background:var(--primary);border-color:var(--primaryline)}.barline{display:grid;grid-template-columns:minmax(80px,150px) 1fr 50px;gap:8px;align-items:center;margin:8px 0}.bar{height:10px;background:var(--barbg);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}.detail{display:grid;gap:8px}.event{padding:12px;background:var(--panel2);border-radius:10px;overflow-wrap:anywhere}.event button{margin-top:8px}.hidden{display:none}.note{font-size:13px;color:var(--muted)}.empty{padding:28px;text-align:center;color:var(--muted)}.skillgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.skillgrid .panel{padding:12px}footer{max-width:1280px;margin:auto;padding:0 18px 30px;color:var(--muted);font-size:12px}
-        @media(max-width:760px){main{padding:10px;gap:10px}.panel{padding:12px;border-radius:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.columns,.skillgrid{grid-template-columns:1fr}.row>*{max-width:100%}.upload{min-width:0;width:100%}header{padding:18px 14px}.barline{grid-template-columns:90px 1fr 42px}table{min-width:680px}}
-    </style>
-</head>
-
-<body>
-    <header>
-        <div class="row" style="justify-content:space-between">
-            <h1>🎲 SkillRoll Analytics</h1><button id="themeToggle" type="button" aria-pressed="false">☀️ 切換亮色</button>
-        </div>
-        <p>上傳跑團紀錄 HTML，自動統計每位角色的技能檢定；對話文字與純骰值不計入。</p>
-    </header>
-    <main>
-        <section class="panel">
-            <div class="row">
-                <div class="upload"><strong>① 選擇原始紀錄 HTML</strong>
-                    <p class="note">檔案只在你的瀏覽器本機解析，不會上傳到伺服器。</p><input id="file" type="file" accept=".html,.htm,text/html">
-                </div>
-                <div><button id="demo" class="primary">載入目前檔案的統計示例</button>
-                    <p class="note">請以你自己的原始 HTML 上傳，才能使用精確跳轉。</p>
-                </div>
-            </div>
-            <div id="status" class="muted" style="margin-top:10px">尚未載入檔案。</div>
-        </section>
-        <section class="panel">
-            <div class="stats">
-                <div class="stat"><strong id="total">—</strong><span>技能骰總數</span></div>
-                <div class="stat"><strong id="people">—</strong><span>角色／人物數</span></div>
-                <div class="stat"><strong id="success">—</strong><span>成功（含各級成功）</span></div>
-                <div class="stat"><strong id="failure">—</strong><span>失敗（含大失敗）</span></div>
-            </div>
-            <div class="filters" id="filters"></div>
-            <div class="row"><label>搜尋姓名／技能 <input id="search" placeholder="輸入關鍵字"></label><label>排序 <select id="sort">
-                        <option value="total">檢定次數</option>
-                        <option value="rate">成功率</option>
-                        <option value="name">姓名</option>
-                        <option value="crit">大成功次數</option>
-                        <option value="fumble">大失敗次數</option>
-                    </select></label><label><input id="binary" type="checkbox"> 只看成功／失敗比率</label></div>
-        </section>
-        <section class="panel">
-            <h2>② 每人統計總覽</h2>
-            <p class="note">點選任一人物列，可查看該人物的技能細項與指定結果清單。</p>
-            <div class="tablewrap">
-                <table>
-                    <thead id="thead"></thead>
-                    <tbody id="summary"></tbody>
-                </table>
-            </div>
-        </section>
-        <section class="columns">
-            <div class="panel">
-                <h2>③ 個人結果分布</h2>
-                <div id="personButtons" class="person-list"></div>
-                <div id="personStats" class="empty">載入 HTML 後，選擇一位人物查看。</div>
-            </div>
-            <div class="panel">
-                <h2>④ 結果比例比較</h2>
-                <div id="chart" class="empty">載入 HTML 後顯示比例。</div>
-            </div>
-        </section>
-        <section class="panel">
-            <h2>⑤ 個人技能成功／失敗明細</h2>
-            <div class="row"><label>目前人物 <select id="personSelect">
-                        <option value="">請先上傳檔案</option>
-                    </select></label><label>結果 <select id="resultSelect">
-                        <option value="all">全部結果</option>
-                    </select></label><label>技能 <input id="skillSearch" placeholder="搜尋技能名稱"></label></div>
-            <div class="tablewrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>技能</th>
-                            <th>檢定數</th>
-                            <th>成功</th>
-                            <th>失敗</th>
-                            <th>大成功</th>
-                            <th>大失敗</th>
-                            <th>成功率</th>
-                            <th>查看</th>
-                        </tr>
-                    </thead>
-                    <tbody id="skills"></tbody>
-                </table>
-            </div>
-        </section>
-        <section class="panel">
-            <h2>⑥ 檢定紀錄預覽／回顧</h2>
-            <p class="note">點選下方某筆紀錄的「跳到原文」，會在原始 HTML 預覽中定位該訊息；若原始檔案的格式不含可辨識訊息區塊，仍會顯示擷取到的原文。</p>
-            <div id="events" class="detail">
-                <div class="empty">選擇人物與結果後，這裡會列出對應骰次。</div>
-            </div>
-            <div id="sourceWrap" class="hidden" style="margin-top:16px">
-                <h3>原始 HTML 預覽</h3>
-                <div class="row"><button id="hideSource">收起原文預覽</button><span class="note">可在此確認該次檢定的上下文。</span></div><iframe id="sourceFrame" title="原始紀錄預覽" style="width:100%;height:520px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:10px"></iframe>
-            </div>
-        </section>
-    </main>
-    <footer>統計定義：成功＝一般成功＋困難成功＋極限成功＋大成功；失敗＝失敗＋大失敗。成功率＝成功次數 ÷ 所有已辨識技能骰。不同規則系統可能有不同判定文字，請以原始紀錄顯示結果為準。</footer>
-    <script>
-        (()=>{
-        const CATS=['大成功','極限成功','困難成功','一般成功','失敗','大失敗'];
-        const SUCCESS=new Set(['大成功','極限成功','困難成功','一般成功']);
-        let events=[],sourceHtml='',people=[],selected='',activeCat='all',frameReady=false;
-        const $=id=>document.getElementById(id);
-        const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        function getName(t){
-         const date=t.search(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);let prefix=date>=0?t.slice(0,date).trim():'';
-         // KP 發出的 NPC 檢定仍歸在 KP 名下，不用訊息中的 NPC 顏色標籤另開人物。
-         if(/^(KP|KP[：:]|KP\s)/i.test(prefix)) return 'KP';
-         if(!prefix||prefix==='GM'||prefix==='GM：'||prefix==='GM:'){
-           const m=t.match(/\[([🔴🟡🟢🔵🟣⚪🟠🟤].+?)\]/);if(m) return m[1].replace(/^[🔴🟡🟢🔵🟣⚪🟠🟤]\s*/,'').trim();
-         }
-         prefix=prefix.replace(/^GM\s*/i,'').trim();
-         return prefix||'未辨識人物';
-        }
-        function parse(html){
-         sourceHtml=html;events=[];const doc=new DOMParser().parseFromString(html,'text/html');
-         const nodes=[...doc.querySelectorAll('.message')];const useNodes=nodes.length?nodes:[...doc.querySelectorAll('body *')].filter(n=>n.children.length===0);
-         useNodes.forEach((node,index)=>{
-          const t=(node.innerText||node.textContent||'').replace(/\s+/g,' ').trim();
-          if(!/\bCC(?:B)?(?:\s*[-+]?\d+)?\s*<=/i.test(t))return;
-          // Only count actual percentile skill checks that state one of the six roll outcomes.
-          const cat=CATS.find(c=>new RegExp('＞\\s*'+c+'(?:\\s|$)').test(t)) || CATS.find(c=>t.endsWith(c));
-          if(!cat)return;
-          const skillMatch=t.match(/\bCC(?:B)?(?:\s*[-+]?\d+)?\s*<=\s*\d+\s+(.+?)\s*\(1D100/i);
-          if(!skillMatch)return;
-          let skill=skillMatch[1].replace(/[　]/g,' ').trim().replace(/^[「『＜<]|[」』＞>]$/g,'');
-          if(!skill||/^\d/.test(skill))skill='未標示技能';
-          const raw=t.match(/＞\s*([^＞]+)\s*＞\s*([^＞]+)\s*＞\s*(大成功|極限成功|困難成功|一般成功|大失敗|失敗)\s*$/);
-          const dateMatch=t.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*(?:上午|下午)?\s*\d{1,2}:\d{2}:\d{2}/);
-          events.push({id:events.length,sourceIndex:index,name:getName(t),skill,cat,raw:raw?raw[2].trim():'',roll:raw?raw[1].trim():'',date:dateMatch?dateMatch[0]:'',text:t,sourceNodeIndex:index});
-         });
-         people=[...new Set(events.map(e=>e.name))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
-         selected=people[0]||'';activeCat='all';
-         $('status').textContent=`已載入 ${nodes.length.toLocaleString()} 則訊息，辨識出 ${events.length.toLocaleString()} 次技能檢定、${people.length} 位人物。純 1D100、對話中提到的成功／失敗，以及沒有技能檢定格式的訊息不納入。`;
-         $('sourceFrame').srcdoc=sourceHtml;frameReady=false;$('sourceWrap').classList.add('hidden');
-         render();
-        }
-        function filtered(){const q=$('search').value.trim().toLowerCase();return events.filter(e=>(!q||(e.name+' '+e.skill).toLowerCase().includes(q))&&(activeCat==='all'||e.cat===activeCat)&&(!selected||e.name===selected));}
-        function counts(list){let o={total:list.length};CATS.forEach(c=>o[c]=list.filter(e=>e.cat===c).length);o.succ=list.filter(e=>SUCCESS.has(e.cat)).length;o.fail=list.length-o.succ;o.rate=o.total?o.succ/o.total*100:0;return o}
-        function rate(n,d){return d?(n/d*100).toFixed(1)+'%':'—'}
-        function render(){
-         const base=events.filter(e=>activeCat==='all'||e.cat===activeCat);
-         $('total').textContent=events.length;$('people').textContent=people.length;
-         const all=counts(events);$('success').textContent=all.succ;$('failure').textContent=all.fail;
-         $('filters').innerHTML='<label><input type="radio" name="cat" value="all" '+(activeCat==='all'?'checked':'')+'>全部</label>'+CATS.map(c=>`<label><input type="radio" name="cat" value="${c}" ${activeCat===c?'checked':''}>${c} <b>${events.filter(e=>e.cat===c).length}</b></label>`).join('');
-         $('filters').querySelectorAll('input').forEach(el=>el.onchange=()=>{activeCat=el.value;render()});
-         const isBin=$('binary').checked;
-         $('thead').innerHTML='<tr><th>人物</th><th>檢定</th>'+(isBin?'<th>成功</th><th>失敗</th><th>成功率</th>':CATS.map(c=>`<th>${c}</th>`).join(''))+'<th>大成功／大失敗</th></tr>';
-         let rows=people.map(name=>({name,c:counts(events.filter(e=>e.name===name&&(activeCat==='all'||e.cat===activeCat)))}));
-         const sort=$('sort').value;rows.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'zh-Hant'):sort==='rate'?b.c.rate-a.c.rate:sort==='crit'?b.c['大成功']-a.c['大成功']:sort==='fumble'?b.c['大失敗']-a.c['大失敗']:b.c.total-a.c.total);
-         $('summary').innerHTML=rows.filter(r=>!$('search').value.trim()||r.name.toLowerCase().includes($('search').value.trim().toLowerCase())).map(r=>`<tr class="clickrow" data-person="${esc(r.name)}"><td><b>${esc(r.name)}</b></td><td>${r.c.total}</td>${isBin?`<td>${r.c.succ}</td><td>${r.c.fail}</td><td>${rate(r.c.succ,r.c.total)}</td>`:CATS.map(c=>`<td class="cat-${c}">${r.c[c]}</td>`).join('')}<td><span class="cat-大成功">${r.c['大成功']}</span> / <span class="cat-大失敗">${r.c['大失敗']}</span></td></tr>`).join('')||'<tr><td colspan="10">沒有符合資料</td></tr>';
-         $('summary').querySelectorAll('tr[data-person]').forEach(tr=>tr.onclick=()=>selectPerson(tr.dataset.person));
-         $('personButtons').innerHTML=people.map(n=>`<button class="personbtn ${selected===n?'active':''}" data-p="${esc(n)}">${esc(n)}</button>`).join('');
-         $('personButtons').querySelectorAll('button').forEach(b=>b.onclick=()=>selectPerson(b.dataset.p));
-         $('personSelect').innerHTML=people.map(n=>`<option ${n===selected?'selected':''} value="${esc(n)}">${esc(n)}</option>`).join('')||'<option>沒有辨識到人物</option>';
-         $('resultSelect').innerHTML='<option value="all">全部結果</option>'+CATS.map(c=>`<option value="${c}">${c}</option>`).join('');
-         renderPerson();renderChart();
-        }
-        function selectPerson(n){selected=n;$('personSelect').value=n;render();$('personSelect').value=n}
-        function renderPerson(){
-         const es=events.filter(e=>e.name===selected),c=counts(es);
-         $('personStats').className='';$('personStats').innerHTML=`<div class="stats"><div class="stat"><strong>${c.total}</strong><span>總檢定</span></div><div class="stat"><strong>${rate(c.succ,c.total)}</strong><span>成功率</span></div><div class="stat"><strong>${c.succ}</strong><span>成功合計</span></div><div class="stat"><strong>${c.fail}</strong><span>失敗合計</span></div></div>`+CATS.map(cat=>`<div class="barline"><span>${cat}</span><div class="bar"><i style="width:${c.total?c[cat]/c.total*100:0}%"></i></div><b>${c[cat]} <small class="muted">${rate(c[cat],c.total)}</small></b></div>`).join('');
-         const skillQ=$('skillSearch').value.trim().toLowerCase(),res=$('resultSelect').value;
-         const map={};es.filter(e=>(res==='all'||e.cat===res)&&(!skillQ||e.skill.toLowerCase().includes(skillQ))).forEach(e=>(map[e.skill]??=[]).push(e));
-         $('skills').innerHTML=Object.entries(map).sort((a,b)=>b[1].length-a[1].length).map(([skill,list])=>{const x=counts(list);return `<tr><td>${esc(skill)}</td><td>${x.total}</td><td>${x.succ}</td><td>${x.fail}</td><td>${x['大成功']}</td><td>${x['大失敗']}</td><td>${rate(x.succ,x.total)}</td><td><button data-skill="${esc(skill)}">查看紀錄</button></td></tr>`}).join('')||'<tr><td colspan="8">沒有符合資料</td></tr>';
-         $('skills').querySelectorAll('button[data-skill]').forEach(b=>b.onclick=()=>{ $('skillSearch').value=b.dataset.skill;renderPerson();renderEvents()});
-         renderEvents();
-        }
-        function renderChart(){
-         const q=$('search').value.trim().toLowerCase();
-         const es=events.filter(e=>!q||(e.name+' '+e.skill).toLowerCase().includes(q));
-         $('chart').innerHTML=people.map(n=>{const list=es.filter(e=>e.name===n),c=counts(list);return `<div style="margin-bottom:14px"><b>${esc(n)}</b><div class="barline"><span>成功率</span><div class="bar"><i style="width:${c.rate}%"></i></div><b>${rate(c.succ,c.total)}</b></div><div class="note">成功 ${c.succ} 次 · 失敗 ${c.fail} 次 · 大成功 ${c['大成功']} 次 · 大失敗 ${c['大失敗']} 次</div></div>`}).join('')||'無資料';
-        }
-        function renderEvents(){
-         const res=$('resultSelect').value,skillQ=$('skillSearch').value.trim().toLowerCase();
-         const es=events.filter(e=>e.name===selected&&(res==='all'||e.cat===res)&&(!skillQ||e.skill.toLowerCase().includes(skillQ)));
-         $('events').innerHTML=es.length?`<p class="muted">共 ${es.length} 筆 · 依原始紀錄順序排列</p>`+es.map(e=>`<div class="event"><div class="row"><span class="pill">${esc(e.cat)}</span><b>${esc(e.skill)}</b><span class="muted">${esc(e.date)}</span></div><div>骰值：${esc(e.roll||'—')}　技能值／判定：${esc((e.text.match(/CC(?:B)?(?:\s*[-+]?\d+)?\s*<=\s*\d+/i)||[])[0]||'—')}</div><div class="note">${esc(e.text.slice(0,300))}${e.text.length>300?'…':''}</div><button class="primary" data-jump="${e.id}">跳到原文</button></div>`).join(''):'<div class="empty">沒有符合這個人物／結果／技能的骰次。</div>';
-         $('events').querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>jump(Number(b.dataset.jump)));
-        }
-        function jump(id){
-         const e=events.find(x=>x.id===id);if(!e)return;
-         $('sourceWrap').classList.remove('hidden');$('sourceFrame').scrollIntoView({behavior:'smooth',block:'start'});
-         const frame=$('sourceFrame');const attempt=()=>{try{const doc=frame.contentDocument;const nodes=doc.querySelectorAll('.message');if(nodes.length){const node=nodes[e.sourceNodeIndex];if(node){node.style.outline='3px solid #ffbf47';node.style.backgroundColor='rgba(255,191,71,.18)';node.scrollIntoView({behavior:'smooth',block:'center'});return true}}}catch(err){}return false};
-         if(!attempt())frame.onload=()=>{attempt()};
-        }
-        $('file').addEventListener('change',async ev=>{const f=ev.target.files[0];if(!f)return;try{parse(await f.text())}catch(e){$('status').textContent='讀取失敗：請確認選擇的是原始 HTML 檔案。'}});
-        $('demo').onclick=()=>{if(sourceHtml){$('status').textContent='目前已載入檔案。';render()}else{$('status').textContent='請先選擇原始 HTML 檔案；此按鈕不會載入其他人的資料。';$('file').click()}};
-        $('search').addEventListener('input',()=>{render()});$('sort').addEventListener('change',render);$('binary').addEventListener('change',render);
-        $('personSelect').addEventListener('change',e=>selectPerson(e.target.value));$('resultSelect').addEventListener('change',()=>{renderPerson()});$('skillSearch').addEventListener('input',()=>renderPerson());
-        $('hideSource').onclick=()=>$('sourceWrap').classList.add('hidden');
-        const themeToggle=$('themeToggle');themeToggle.onclick=()=>{const light=document.body.dataset.theme!=='light';document.body.dataset.theme=light?'light':'dark';themeToggle.textContent=light?'🌙 切換暗色':'☀️ 切換亮色';themeToggle.setAttribute('aria-pressed',String(light));};
-        })();
-    </script>
-</body>
-
-</html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>技能骰統計分析器</title>
+<style>
+:root{color-scheme:dark;--bg:#10131b;--panel:#191f2b;--panel2:#202838;--line:#303b4f;--text:#edf2fb;--muted:#9ba8bd;--accent:#8b9cff;--selected:#f59e0b;--good:#61d6a4;--bad:#ff7e8b;--header1:#242e49;--header2:#171c2a;--hover:#252e40;--barbg:#30394b;--pillbg:#303b50;--primary:#4858a4;--primaryline:#6578d5}
+body[data-theme="light"]{color-scheme:light;--bg:#f3f6fb;--panel:#ffffff;--panel2:#edf2f9;--line:#d4dce8;--text:#202b3c;--muted:#64748b;--accent:#5268d8;--selected:#f59e0b;--good:#16845b;--bad:#c9354c;--header1:#e3eaff;--header2:#f5f7ff;--hover:#e6edfa;--barbg:#dce4f0;--pillbg:#e1e8f3;--primary:#dce4ff;--primaryline:#9aa9ec}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Noto Sans TC",sans-serif}header{padding:24px max(16px,calc((100% - 1280px)/2));background:linear-gradient(120deg,var(--header1),var(--header2));border-bottom:1px solid var(--line)}h1{margin:0;font-size:clamp(22px,4vw,32px)}header p{margin:6px 0 0;color:var(--muted)}main{max-width:1280px;margin:auto;padding:18px;display:grid;gap:16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.upload{border:1px dashed #65749a;padding:14px;border-radius:12px;flex:1;min-width:240px}input,select,button{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px}input[type=file]{max-width:100%}button{cursor:pointer}button:hover{border-color:var(--accent)}button.primary{background:var(--primary);border-color:var(--primaryline)}button:disabled{opacity:.45;cursor:not-allowed}.muted{color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{background:var(--panel2);padding:12px;border-radius:12px}.stat strong{display:block;font-size:24px}.stat span{color:var(--muted);font-size:12px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.filters label{display:flex;align-items:center;gap:5px;background:var(--panel2);padding:6px 9px;border-radius:9px}.filters input{accent-color:var(--accent)}.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;min-width:760px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--muted);font-weight:600}tr.clickrow{cursor:pointer}tr.clickrow:hover{background:var(--hover)}.pill{display:inline-block;padding:2px 8px;border-radius:20px;background:var(--pillbg);font-size:12px}.cat-大成功,.cat-極限成功{color:var(--good)}.cat-大失敗,.cat-失敗{color:var(--bad)}.rate-low{color:var(--bad);font-weight:700}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}.person-list{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.personbtn.active{background:var(--primary);border-color:var(--primaryline)}.draghandle{display:inline-block;width:16px;height:24px;padding:0;margin-right:8px;vertical-align:middle;border:1px solid transparent;border-radius:6px;background-color:transparent;background-image:radial-gradient(circle,var(--muted) 1.7px,transparent 2px);background-size:8px 8px;background-position:0 0;cursor:grab;touch-action:none}.draghandle:hover{background-color:var(--hover);border-color:var(--line)}.draghandle:active{cursor:grabbing}tr.dragging{opacity:.45}tr.drag-over{box-shadow:inset 0 3px 0 var(--accent)}.draghint{margin:6px 0 10px}.barline{display:grid;grid-template-columns:minmax(80px,150px) 1fr 50px;gap:8px;align-items:center;margin:8px 0}.bar{height:10px;background:var(--barbg);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}.detail{display:grid;gap:8px}.event{padding:12px;background:var(--panel2);border-radius:10px;overflow-wrap:anywhere}.event button{margin-top:8px}.hidden{display:none}.note{font-size:13px;color:var(--muted)}.empty{padding:28px;text-align:center;color:var(--muted)}.skillgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.skillgrid .panel{padding:12px}footer{max-width:1280px;margin:auto;padding:0 18px 30px;color:var(--muted);font-size:12px}
+@media(max-width:760px){main{padding:10px;gap:10px}.panel{padding:12px;border-radius:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.columns,.skillgrid{grid-template-columns:1fr}.row>*{max-width:100%}.upload{min-width:0;width:100%}header{padding:18px 14px}.barline{grid-template-columns:90px 1fr 42px}table{min-width:680px}}
+</style></head><body>
+<header><div class="row" style="justify-content:space-between"><h1>🎲 SkillRoll Analytics</h1><button id="themeToggle" type="button" aria-pressed="false">☀️ 切換亮色</button></div><p>上傳跑團紀錄 HTML，自動統計每位角色的技能檢定；對話文字與純骰值不計入。</p></header>
+<main>
+<section class="panel"><div class="upload"><strong>① 選擇原始紀錄 HTML</strong><p class="note">檔案只在你的瀏覽器本機解析，不會上傳到伺服器。</p><input id="file" type="file" accept=".html,.htm,text/html"></div><div id="status" class="muted" style="margin-top:10px">尚未載入檔案。</div></section>
+<section class="panel"><div class="stats"><div class="stat"><strong id="total">—</strong><span>技能骰總數</span></div><div class="stat"><strong id="people">—</strong><span>角色／人物數</span></div><div class="stat"><strong id="success">—</strong><span>成功（含各級成功）</span></div><div class="stat"><strong id="failure">—</strong><span>失敗（含大失敗）</span></div></div>
+<div class="filters" id="filters"></div><div class="row"><label>搜尋姓名／技能 <input id="search" placeholder="輸入關鍵字"></label><button id="clearSearch" type="button" title="清空搜尋關鍵字">取消搜尋</button><label>排序 <select id="sort"><option value="total">檢定次數</option><option value="rate">成功率</option><option value="name">姓名</option><option value="crit">大成功次數</option><option value="fumble">大失敗次數</option></select></label><label><input id="binary" type="checkbox"> 只看成功／失敗比率</label></div></section>
+<section class="panel"><h2>② 每人統計總覽</h2><p class="note">點選人物列可查看技能細項；拖曳最左側的六點把手即可調整人物順序，第④區會同步排列。調整只改顯示位置，不會改動統計資料。</p><div class="tablewrap"><table><thead id="thead"></thead><tbody id="summary"></tbody></table></div></section>
+<section class="columns"><div class="panel"><h2>③ 個人結果分布</h2><div id="personButtons" class="person-list"></div><div id="personStats" class="empty">載入 HTML 後，選擇一位人物查看。</div></div><div class="panel"><h2>④ 結果比例比較</h2><div id="chart" class="empty">載入 HTML 後顯示比例。</div></div></section>
+<section class="panel"><h2>⑤ 個人技能成功／失敗明細</h2><div class="row"><label>目前人物 <select id="personSelect"><option value="">請先上傳檔案</option></select></label><label>結果 <select id="resultSelect"><option value="all">全部結果</option></select></label><label>技能 <input id="skillSearch" placeholder="搜尋技能名稱"></label><button id="clearSkillSearch" type="button" title="清空技能搜尋關鍵字">取消搜尋</button><label><input id="sanGroup" type="checkbox" checked> SAN 群組（置底）</label><label><input id="mergeSan" type="checkbox" checked> 合併 SAN（取最低值）</label><label><input id="showSkillValue" type="checkbox" checked> 顯示技能數值（CC&lt;=數值 技能名稱）</label></div><div class="tablewrap"><table><thead><tr><th>技能／數值</th><th>檢定數</th><th>成功</th><th>失敗</th><th>大成功</th><th>大失敗</th><th>成功率</th><th>查看</th></tr></thead><tbody id="skills"></tbody></table></div></section>
+<section class="panel"><h2>⑥ 檢定紀錄預覽／回顧</h2><p class="note">點選下方某筆紀錄的「跳到原文」，會在原始 HTML 預覽中定位該訊息；若原始檔案的格式不含可辨識訊息區塊，仍會顯示擷取到的原文。</p><div id="events" class="detail"><div class="empty">選擇人物與結果後，這裡會列出對應骰次。</div></div><div id="sourceWrap" class="hidden" style="margin-top:16px"><h3>原始 HTML 預覽</h3><div class="row"><button id="hideSource">收起原文預覽</button><span class="note">可在此確認該次檢定的上下文。</span></div><iframe id="sourceFrame" title="原始紀錄預覽" style="width:100%;height:520px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:10px"></iframe></div></section>
+</main><footer>統計定義：成功＝一般成功＋困難成功＋極限成功＋大成功；失敗＝失敗＋大失敗。成功率＝成功次數 ÷ 所有已辨識技能骰。不同規則系統可能有不同判定文字，請以原始紀錄顯示結果為準。</footer>
+<script>
+(()=>{
+const CATS=['大成功','極限成功','困難成功','一般成功','失敗','大失敗'];
+const SUCCESS=new Set(['大成功','極限成功','困難成功','一般成功']);
+let events=[],sourceHtml='',people=[],selected='',activeCat='all',frameReady=false,manualOrder=[],hasManualOrder=false,draggedPerson='',dropTargetPerson='',selectedRollBin=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function getName(t, node, legacy){
+ // 舊版 CocoFolia：<p><span>[角色色標]</span><span>發言者</span>: <span>內容</span></p>
+ if(legacy && node){
+   const spans=[...node.querySelectorAll('span')];
+   const speaker=spans.length>=2?(spans[1].innerText||spans[1].textContent||'').trim():'';
+   if(/^KP$/i.test(speaker)) return 'KP';
+   if(speaker && !/^GM$/i.test(speaker)) return speaker;
+ }
+ const date=t.search(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/);let prefix=date>=0?t.slice(0,date).trim():'';
+ // KP 發出的 NPC 檢定仍歸在 KP 名下，不用訊息中的 NPC 顏色標籤另開人物。
+ if(/^(KP|KP[：:]|KP\s)/i.test(prefix)) return 'KP';
+ if(!prefix||prefix==='GM'||prefix==='GM：'||prefix==='GM:'){
+   const m=t.match(/\[([🔴🟡🟢🔵🟣⚪🟠🟤].+?)\]/);if(m) return m[1].replace(/^[🔴🟡🟢🔵🟣⚪🟠🟤]\s*/,'').trim();
+ }
+ prefix=prefix.replace(/^GM\s*/i,'').trim();
+ return prefix||'未辨識人物';
+}
+function parse(html){
+ sourceHtml=html;events=[];const doc=new DOMParser().parseFromString(html,'text/html');
+ const modern=[...doc.querySelectorAll('.message')];
+ const legacy=!modern.length;
+ // 舊版匯出沒有 .message，逐則讀取 body 的 p 段落；保留相同選擇器與索引以供原文跳轉。
+ const nodes=legacy?[...doc.body.children].filter(n=>n.tagName==='P') : modern;
+ nodes.forEach((node,index)=>{
+  const t=(node.innerText||node.textContent||'').replace(/\s+/g,' ').trim();
+  if(!/\bCC(?:B)?(?:\s*[-+]?\d+)?\s*<=/i.test(t))return;
+  const cat=CATS.find(c=>new RegExp('＞\\s*'+c+'(?:\\s|$)').test(t)) || CATS.find(c=>t.endsWith(c));
+  if(!cat)return;
+  // 技能名稱在部分舊版紀錄中會省略，例如「CC<=50 (1D100<=50)」。仍計入，名稱標記為未標示技能。
+  // 同時支援一般數值與公式型門檻，例如 CC<=(75/3) 教育 (1D100<=25)。
+  // 技能數值以 1D100 的實際判定目標為準，公式型門檻也不會漏算。
+  const checkMatch=t.match(/\bCC(?:B)?(?:\s*[-+]?\d+)?\s*<=\s*(.*?)\s*\(1D100\s*<=\s*(\d+)/i);
+  if(!checkMatch)return;
+  const targetExpr=(checkMatch[1]||'').trim();
+  const skillTarget=Number(checkMatch[2]);
+  let skillPart=targetExpr;
+  const exprPrefix=targetExpr.match(/^(\([^)]*\)|\d+(?:\s*[+*/-]\s*\d+)*)(?:\s+|$)(.*)$/);
+  if(exprPrefix)skillPart=exprPrefix[2]||'';
+  let skill=(skillPart||'未標示技能').replace(/[　]/g,' ').trim().replace(/^[「『＜<]|[」』＞>]$/g,'');
+  if(!skill||/^\d/.test(skill))skill='未標示技能';
+  const raw=t.match(/＞\s*([^＞]+)\s*＞\s*([^＞]+)\s*＞\s*(大成功|極限成功|困難成功|一般成功|大失敗|失敗)\s*$/);
+  const dateMatch=t.match(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*(?:上午|下午)?\s*\d{1,2}:\d{2}:\d{2}/);
+  events.push({id:events.length,name:getName(t,node,legacy),skill,skillValue:skillTarget,cat,raw:raw?raw[2].trim():'',roll:raw?raw[1].trim():'',date:dateMatch?dateMatch[0]:'',text:t,sourceNodeIndex:index,sourceSelector:legacy?'p.message':'article.message',legacy});
+ });
+ people=[...new Set(events.map(e=>e.name))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+ manualOrder=[...people];hasManualOrder=false;
+ selected=people[0]||'';activeCat='all';
+ $('status').textContent=`已載入 ${nodes.length.toLocaleString()} 則訊息，辨識出 ${events.length.toLocaleString()} 次技能檢定、${people.length} 位人物。已支援新版與舊版 CocoFolia 匯出格式；純骰值與一般對話不納入。`;
+ $('sourceFrame').srcdoc=sourceHtml;frameReady=false;$('sourceWrap').classList.add('hidden');
+ render();
+}
+function filtered(){const q=$('search').value.trim().toLowerCase();return events.filter(e=>(!q||(e.name+' '+e.skill).toLowerCase().includes(q))&&(activeCat==='all'||e.cat===activeCat)&&(!selected||e.name===selected));}
+function counts(list){let o={total:list.length};CATS.forEach(c=>o[c]=list.filter(e=>e.cat===c).length);o.succ=list.filter(e=>SUCCESS.has(e.cat)).length;o.fail=list.length-o.succ;o.rate=o.total?o.succ/o.total*100:0;return o}
+function rate(n,d){return d?(n/d*100).toFixed(1)+'%':'—'}
+function getOrderedPeople(){
+ let list=[...people];
+ if(hasManualOrder){const pos=new Map(manualOrder.map((n,i)=>[n,i]));return list.sort((a,b)=>(pos.get(a)??999999)-(pos.get(b)??999999));}
+ const active=events.filter(e=>activeCat==='all'||e.cat===activeCat);
+ const rows=list.map(name=>({name,c:counts(active.filter(e=>e.name===name))}));
+ const sort=$('sort').value;
+ rows.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'zh-Hant'):sort==='rate'?b.c.rate-a.c.rate:sort==='crit'?b.c['大成功']-a.c['大成功']:sort==='fumble'?b.c['大失敗']-a.c['大失敗']:b.c.total-a.c.total);
+ return rows.map(r=>r.name);
+}
+function movePerson(name,delta){
+ const order=getOrderedPeople();const i=order.indexOf(name),j=i+delta;if(i<0||j<0||j>=order.length)return;
+ [order[i],order[j]]=[order[j],order[i]];manualOrder=order;hasManualOrder=true;render();
+}
+function render(){
+ const base=events.filter(e=>activeCat==='all'||e.cat===activeCat);
+ $('total').textContent=events.length;$('people').textContent=people.length;
+ const all=counts(events);$('success').textContent=all.succ;$('failure').textContent=all.fail;
+ $('filters').innerHTML='<label><input type="radio" name="cat" value="all" '+(activeCat==='all'?'checked':'')+'>全部</label>'+CATS.map(c=>`<label><input type="radio" name="cat" value="${c}" ${activeCat===c?'checked':''}>${c} <b>${events.filter(e=>e.cat===c).length}</b></label>`).join('');
+ $('filters').querySelectorAll('input').forEach(el=>el.onchange=()=>{activeCat=el.value;render()});
+ const isBin=$('binary').checked;
+ $('thead').innerHTML='<tr><th>人物（拖曳六點排序）</th><th>檢定</th>'+(isBin?'<th>成功</th><th>失敗</th><th>成功率</th>':CATS.map(c=>`<th>${c}</th>`).join(''))+'<th>大成功／大失敗</th></tr>';
+ const order=getOrderedPeople();let rows=order.map(name=>({name,c:counts(events.filter(e=>e.name===name&&(activeCat==='all'||e.cat===activeCat)))}));
+ $('summary').innerHTML=rows.filter(r=>!$('search').value.trim()||r.name.toLowerCase().includes($('search').value.trim().toLowerCase())).map(r=>`<tr class="clickrow" data-person="${esc(r.name)}"><td><button class="draghandle" type="button" draggable="true" data-drag-name="${esc(r.name)}" aria-label="拖曳調整 ${esc(r.name)} 的順序" title="按住六點拖曳排序"></button><b>${esc(r.name)}</b></td><td>${r.c.total}</td>${isBin?`<td>${r.c.succ}</td><td>${r.c.fail}</td><td>${rate(r.c.succ,r.c.total)}</td>`:CATS.map(c=>`<td class="cat-${c}">${r.c[c]}</td>`).join('')}<td><span class="cat-大成功">${r.c['大成功']}</span> / <span class="cat-大失敗">${r.c['大失敗']}</span></td></tr>`).join('')||'<tr><td colspan="10">沒有符合資料</td></tr>';
+ $('summary').querySelectorAll('tr[data-person]').forEach(tr=>{
+  tr.onclick=()=>selectPerson(tr.dataset.person);
+  tr.addEventListener('dragover',e=>{if(!draggedPerson||draggedPerson===tr.dataset.person)return;e.preventDefault();tr.classList.add('drag-over')});
+  tr.addEventListener('dragleave',()=>tr.classList.remove('drag-over'));
+  tr.addEventListener('drop',e=>{e.preventDefault();tr.classList.remove('drag-over');if(!draggedPerson||draggedPerson===tr.dataset.person)return;const order=getOrderedPeople();const from=order.indexOf(draggedPerson),to=order.indexOf(tr.dataset.person);if(from<0||to<0)return;order.splice(from,1);order.splice(to,0,draggedPerson);manualOrder=order;hasManualOrder=true;draggedPerson='';render()});
+ });
+ $('summary').querySelectorAll('button[data-drag-name]').forEach(b=>{
+  b.addEventListener('click',e=>e.stopPropagation());
+  b.addEventListener('pointerdown',e=>{e.stopPropagation();draggedPerson=b.dataset.dragName;dropTargetPerson='';b.closest('tr').classList.add('dragging');try{b.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+  b.addEventListener('pointermove',e=>{if(!draggedPerson)return;const under=document.elementFromPoint(e.clientX,e.clientY);const tr=under&&under.closest?under.closest('tr[data-person]'):null;$('summary').querySelectorAll('tr').forEach(x=>x.classList.remove('drag-over'));if(tr&&tr.dataset.person!==draggedPerson){dropTargetPerson=tr.dataset.person;tr.classList.add('drag-over')}else dropTargetPerson='';});
+  const finishDrag=()=>{if(draggedPerson&&dropTargetPerson){const order=getOrderedPeople();const from=order.indexOf(draggedPerson),to=order.indexOf(dropTargetPerson);if(from>=0&&to>=0){order.splice(from,1);order.splice(to,0,draggedPerson);manualOrder=order;hasManualOrder=true}}draggedPerson='';dropTargetPerson='';$('summary').querySelectorAll('tr').forEach(tr=>tr.classList.remove('dragging','drag-over'));render()};
+  b.addEventListener('pointerup',finishDrag);b.addEventListener('pointercancel',finishDrag);
+ });
+ $('personButtons').innerHTML=getOrderedPeople().map(n=>`<button class="personbtn ${selected===n?'active':''}" data-p="${esc(n)}">${esc(n)}</button>`).join('');
+ $('personButtons').querySelectorAll('button').forEach(b=>b.onclick=()=>selectPerson(b.dataset.p));
+ $('personSelect').innerHTML=getOrderedPeople().map(n=>`<option ${n===selected?'selected':''} value="${esc(n)}">${esc(n)}</option>`).join('')||'<option>沒有辨識到人物</option>';
+ $('resultSelect').innerHTML='<option value="all">全部結果</option>'+CATS.map(c=>`<option value="${c}">${c}</option>`).join('');
+ renderPerson();renderChart();
+}
+function selectPerson(n){if(n!==selected)selectedRollBin=null;selected=n;$('personSelect').value=n;render();$('personSelect').value=n}
+function renderPerson(){
+ const es=events.filter(e=>e.name===selected),c=counts(es);
+ $('personStats').className='';$('personStats').innerHTML=`<div class="stats"><div class="stat"><strong>${c.total}</strong><span>總檢定</span></div><div class="stat"><strong>${rate(c.succ,c.total)}</strong><span>成功率</span></div><div class="stat"><strong>${c.succ}</strong><span>成功合計</span></div><div class="stat"><strong>${c.fail}</strong><span>失敗合計</span></div></div>`+CATS.map(cat=>`<div class="barline"><span>${cat}</span><div class="bar"><i style="width:${c.total?c[cat]/c.total*100:0}%"></i></div><b>${c[cat]} <small class="muted">${rate(c[cat],c.total)}</small></b></div>`).join('')+renderRollHistogram(es);
+ $('personStats').querySelectorAll('rect[data-roll]').forEach(bar=>{const choose=()=>{selectedRollBin=Number(bar.dataset.roll);updateRollSelectionUI()};bar.addEventListener('click',choose);bar.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
+ const cancelRollSelection=$('cancelRollSelection');if(cancelRollSelection)cancelRollSelection.onclick=()=>{selectedRollBin=null;updateRollSelectionUI()};
+ updateRollSelectionUI();
+ const skillQ=$('skillSearch').value.trim().toLowerCase(),res=$('resultSelect').value;
+ const mergeSan=$('mergeSan').checked,groupSan=$('sanGroup').checked;
+ const map={};es.filter(e=>(res==='all'||e.cat===res)&&(!skillQ||e.skill.toLowerCase().includes(skillQ))).forEach(e=>{
+   const isSan=e.skill.trim().toUpperCase()==='SAN';
+   // 合併 SAN 時忽略每次變動的技能值；保留所有事件以供成功／失敗率與紀錄統計。
+   const key=JSON.stringify(isSan&&mergeSan?['SAN','merged']:[e.skill,e.skillValue]);
+   (map[key]??=[]).push(e);
+ });
+ const skillRows=Object.entries(map).map(([key,list])=>{
+   const [skill,keyValue]=JSON.parse(key),isSan=skill.trim().toUpperCase()==='SAN';
+   const skillValue=isSan&&mergeSan?Math.min(...list.map(e=>Number(e.skillValue)||0)):Number(keyValue);
+   return {skill,skillValue,list,isSan};
+ }).sort((a,b)=>{
+   if(groupSan&&a.isSan!==b.isSan)return a.isSan?1:-1;
+   return b.list.length-a.list.length||a.skill.localeCompare(b.skill,'zh-Hant')||a.skillValue-b.skillValue;
+ });
+ $('skills').innerHTML=skillRows.map(({skill,skillValue,list})=>{const x=counts(list),label=$('showSkillValue').checked?`CC<=${skillValue} ${skill}`:skill,rateClass=x.rate<skillValue?'rate-low':'';return `<tr><td>${esc(label)}</td><td>${x.total}</td><td>${x.succ}</td><td>${x.fail}</td><td>${x['大成功']}</td><td>${x['大失敗']}</td><td class="${rateClass}">${rate(x.succ,x.total)}</td><td><button data-skill="${esc(skill)}" data-skill-value="${skillValue}">查看紀錄</button></td></tr>`}).join('')||'<tr><td colspan="8">沒有符合資料</td></tr>';
+ $('skills').querySelectorAll('button[data-skill]').forEach(b=>b.onclick=()=>{ $('skillSearch').value=b.dataset.skill;renderPerson();renderEvents()});
+ renderEvents();
+}
+function updateRollSelectionUI(){
+ const bars=$('personStats').querySelectorAll('rect[data-roll]');
+ let chosen=null;
+ bars.forEach(r=>{
+  const active=Number(r.dataset.roll)===selectedRollBin;
+  r.setAttribute('fill',active?'var(--selected)':'var(--accent)');
+  r.removeAttribute('stroke');r.removeAttribute('stroke-width');
+  r.style.outline='none';r.style.stroke='none';r.style.strokeWidth='0';
+  if(active)chosen=r;
+ });
+ const info=$('rollSelectionInfo');if(info)info.textContent=chosen?`已選取骰值 ${chosen.dataset.roll}，出現 ${chosen.dataset.count} 次。`:'';
+ const cancel=$('cancelRollSelection');if(cancel)cancel.disabled=!chosen;
+}
+function renderRollHistogram(list){
+ const bins=Array(101).fill(0);
+ list.forEach(e=>{const value=Number.parseInt(e.raw,10);if(Number.isInteger(value)&&value>=1&&value<=100)bins[value]++});
+ const max=Math.max(1,...bins.slice(1));
+ const bars=Array.from({length:100},(_,i)=>{const n=i+1,h=bins[n]/max*105,x=i*10,active=selectedRollBin===n;return `<rect data-roll="${n}" data-count="${bins[n]}" x="${x}" y="${145-h}" width="10" height="${Math.max(1,h)}" rx="1" fill="${active?'var(--selected)':'var(--accent)'}" style="cursor:pointer;touch-action:manipulation;outline:none;stroke:none;stroke-width:0" tabindex="0" role="button" aria-label="骰值 ${n}，出現 ${bins[n]} 次，點擊查看並標示"><title>${n}：${bins[n]} 次</title></rect>`}).join('');
+ const labels=Array.from({length:10},(_,i)=>{const n=(i+1)*10,x=(n-1)*10+4;return `<text x="${x}" y="166" text-anchor="middle" fill="var(--muted)" font-size="11">${n}</text>`}).join('');
+ const total=bins.slice(1).reduce((a,b)=>a+b,0);
+ return `<div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--line)"><h3 style="margin:0 0 4px">🎲 骰值分布直方圖（1–100）</h3><p class="note">統計目前人物所有已辨識技能檢定的最終骰值；手機可直接點擊柱子；選中的柱子會變成橘色，點擊後不會跳回直方圖最左側。</p>${total?`<div style="width:100%;overflow-x:auto"><svg viewBox="0 0 1000 178" role="img" aria-label="骰值 1 到 100 的出現次數直方圖" style="display:block;width:100%;min-width:1000px;height:auto"><line x1="0" y1="145" x2="1000" y2="145" stroke="var(--line)"/>${bars}${labels}</svg></div><div id="rollSelectionInfo" class="note" style="margin-top:8px;min-height:24px"></div><div class="row" style="margin-top:4px"><span class="note">有效骰值：${total} 次 · 最高單一骰值出現 ${max} 次</span><button id="cancelRollSelection" type="button" style="padding:5px 10px;font-size:13px">取消選取</button></div>`:'<div class="empty">目前人物沒有可辨識的 1–100 最終骰值。</div>'}</div>`;
+}
+function renderChart(){
+ const q=$('search').value.trim().toLowerCase();
+ const es=events.filter(e=>!q||(e.name+' '+e.skill).toLowerCase().includes(q));
+ $('chart').innerHTML=getOrderedPeople().map(n=>{const list=es.filter(e=>e.name===n),c=counts(list);return `<div style="margin-bottom:14px"><b>${esc(n)}</b><div class="barline"><span>成功率</span><div class="bar"><i style="width:${c.rate}%"></i></div><b>${rate(c.succ,c.total)}</b></div><div class="note">成功 ${c.succ} 次 · 失敗 ${c.fail} 次 · 大成功 ${c['大成功']} 次 · 大失敗 ${c['大失敗']} 次</div></div>`}).join('')||'無資料';
+}
+function renderEvents(){
+ const res=$('resultSelect').value,skillQ=$('skillSearch').value.trim().toLowerCase();
+ const es=events.filter(e=>e.name===selected&&(res==='all'||e.cat===res)&&(!skillQ||e.skill.toLowerCase().includes(skillQ)));
+ $('events').innerHTML=es.length?`<p class="muted">共 ${es.length} 筆 · 依原始紀錄順序排列</p>`+es.map(e=>`<div class="event"><div class="row"><span class="pill">${esc(e.cat)}</span><b>${esc(e.skill)}</b><span class="muted">${esc(e.date)}</span></div><div>骰值：${esc(e.roll||'—')}　技能值／判定：${esc((e.text.match(/CC(?:B)?(?:\s*[-+]?\d+)?\s*<=\s*\d+/i)||[])[0]||'—')}</div><div class="note">${esc(e.text.slice(0,300))}${e.text.length>300?'…':''}</div><button class="primary" data-jump="${e.id}">跳到原文</button></div>`).join(''):'<div class="empty">沒有符合這個人物／結果／技能的骰次。</div>';
+ $('events').querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>jump(Number(b.dataset.jump)));
+}
+function jump(id){
+ const e=events.find(x=>x.id===id);if(!e)return;
+ $('sourceWrap').classList.remove('hidden');$('sourceFrame').scrollIntoView({behavior:'smooth',block:'start'});
+ const frame=$('sourceFrame');const attempt=()=>{try{const doc=frame.contentDocument;const nodes=e.legacy?doc.querySelectorAll('body > p'):doc.querySelectorAll('.message');if(nodes.length){const node=nodes[e.sourceNodeIndex];if(node){node.style.outline='3px solid #ffbf47';node.style.backgroundColor='rgba(255,191,71,.18)';node.scrollIntoView({behavior:'smooth',block:'center'});return true}}}catch(err){}return false};
+ if(!attempt())frame.onload=()=>{attempt()};
+}
+$('file').addEventListener('change',async ev=>{const f=ev.target.files[0];if(!f)return;try{parse(await f.text())}catch(e){$('status').textContent='讀取失敗：請確認選擇的是原始 HTML 檔案。'}});
+$('search').addEventListener('input',()=>{render()});$('clearSearch').addEventListener('click',()=>{$('search').value='';render();$('search').focus()});$('sort').addEventListener('change',()=>{hasManualOrder=false;render()});$('binary').addEventListener('change',render);
+$('personSelect').addEventListener('change',e=>selectPerson(e.target.value));$('resultSelect').addEventListener('change',()=>{renderPerson()});$('skillSearch').addEventListener('input',()=>renderPerson());$('clearSkillSearch').addEventListener('click',()=>{$('skillSearch').value='';renderPerson();$('skillSearch').focus()});$('showSkillValue').addEventListener('change',()=>renderPerson());$('sanGroup').addEventListener('change',()=>renderPerson());$('mergeSan').addEventListener('change',()=>renderPerson());
+$('hideSource').onclick=()=>$('sourceWrap').classList.add('hidden');
+const themeToggle=$('themeToggle');themeToggle.onclick=()=>{const light=document.body.dataset.theme!=='light';document.body.dataset.theme=light?'light':'dark';themeToggle.textContent=light?'🌙 切換暗色':'☀️ 切換亮色';themeToggle.setAttribute('aria-pressed',String(light));};
+})();
+</script></body></html>
